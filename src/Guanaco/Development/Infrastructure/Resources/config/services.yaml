@@ -1,0 +1,15 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Guanaco\Development\:
+        resource: '../../../*'
+
+    Guanaco\Development\Infrastructure\Command\:
+            resource: '../../Command'
+            tags: ['console.command']
+
+    Guanaco\Development\Domain\Service\InitializePackageService:
+        tags:
+            - { name: 'guanaco.development.config_aware' }

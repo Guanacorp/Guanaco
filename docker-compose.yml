@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+    guanaco:
+        build:
+            context: .
+            dockerfile: docker/guanaco/Dockerfile
+        env_file: .env
+        volumes:
+            - './:/var/www/guanaco:rw'
+        depends_on:
+            - database
+
+    nginx:
+        build:
+            context: .
+            dockerfile: docker/nginx/Dockerfile
+        volumes:
+            - './public:/var/www/guanaco/public'
+        ports:
+            - '${WEB_PORT}:80'
+        depends_on:
+            - guanaco
+
+    database:
+        image: mysql:${DATABASE_VERSION}
+        ports:
+            - '${DATABASE_PORT}:3306'
+        volumes:
+            - 'data:/var/lib/mysql'
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: '${DATABASE_ALLOW_EMPTY_PASSWORD}'
+            MYSQL_USER: '${DATABASE_USER}'
+            MYSQL_PASSWORD: '${DATABASE_PASSWORD}'
+            MYSQL_DATABASE: '${DATABASE_NAME}'
+
+volumes:
+    data:

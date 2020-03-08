@@ -1,0 +1,51 @@
+{
+    "name": "guanaco/resource",
+    "type": "library",
+    "description": "",
+    "keywords": [
+        "guanaco",
+        "library"
+    ],
+    "homepage": "https://guanaco.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexandre Andre",
+            "email": "alexandre@creakiwi.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2.28",
+        "ramsey/uuid": "^3.9"
+    },
+    "require-dev": {
+        "dg/bypass-finals": "^1.1",
+        "phpspec/prophecy": "^1.10",
+        "symfony/test-pack": "^1.0"
+    },
+    "config": {
+        "preferred-install": {
+            "*": "dist",
+            "sort-packages": true
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Guanaco\\Resource\\Domain\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Guanaco\\Resource\\Domain\\Tests\\": "Tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../*/*"
+        }
+    ],
+    "extra": []
+}
