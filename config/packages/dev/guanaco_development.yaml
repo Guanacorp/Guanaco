@@ -1,10 +1,10 @@
 guanaco_development:
-    authors:
-        - name: Alexandre Andre
-          email: alexandre@creakiwi.com
-    composer:
-        license: MIT
-        requirements:
-            require:
-                - package: php
-                  version: ^7.2.28
+    infrastructure:
+        authors:
+            - name: Alexandre Andre
+              email: alexandre@creakiwi.com
+        composer:
+            license: MIT
+            requirements:
+                require: ~
+                require-dev: ~

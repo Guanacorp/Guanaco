@@ -41,6 +41,15 @@ final class InitializePackageService
         $this->createComposerFile($command);
         $this->createReadmeFile($command);
         $this->populateRootGitIgnoreFile($command);
+
+        switch ($command->getType()) {
+            case GenerateCommandInterface::TYPE_API:
+            case GenerateCommandInterface::TYPE_INFRASTRUCTURE:
+                $this->createBundleFile($command);
+                break;
+            default:
+                break;
+        }
     }
 
     private function makeDirectories(array $directories): void
@@ -62,6 +71,17 @@ final class InitializePackageService
         $this->filesystem->chmod($gitIgnoreFiles, 0644);
     }
 
+    private function buildComposerRequirements(array $requirements)
+    {
+        $composerRequirements = [];
+
+        foreach ($requirements as $requirement) {
+            $composerRequirements[$requirement['package']] = $requirement['version'];
+        }
+
+        return $composerRequirements;
+    }
+
     private function createComposerFile(GenerateCommandInterface $command): void
     {
         $path = sprintf('%s/%s/composer.json', $this->configuration['root_directory'], $command->getPackageDirectory());
@@ -70,19 +90,17 @@ final class InitializePackageService
             'type' => $command->getPackageType(),
             'description' => '',
             'keywords' => ['guanaco', $command->getPackageType()],
-            'homepage' => 'https://guanaco.com',
-            'license' => 'MIT',
-            'authors' => [
-                [
-                    'name' => 'Alexandre Andre',
-                    'email' => 'alexandre@creakiwi.com',
-                ],
+            'homepage' => 'https://guanaco.com/',
+            'license' => $this->configuration['composer']['license'],
+            'authors' => $this->configuration['authors'],
+            'require' => [
+                'php' => '^7.2.28',
             ],
-            'require' => [],
             'require-dev' => [
                 'dg/bypass-finals' => '^1.1',
                 'phpspec/prophecy' => '^1.10',
                 'symfony/test-pack' => '^1.0',
+                'symfony/var-dumper' => '^5.0',
             ],
             'config' => [
                 'preferred-install' => [
@@ -111,11 +129,11 @@ final class InitializePackageService
             'extra' => [],
         ];
 
-        foreach ($this->configuration['composer']['requirements'] as $type => $packages) {
-            foreach ($packages as $package) {
-                $composerConfiguration[$type][$package['package']] = $package['version'];
-            }
-        }
+        $composerConfiguration['require'] += $this->buildComposerRequirements($this->configuration['composer']['requirements']['require']);
+        $composerConfiguration['require-dev'] += $this->buildComposerRequirements($this->configuration['composer']['requirements']['require_dev']);
+
+        ksort($composerConfiguration['require']);
+        ksort($composerConfiguration['require-dev']);
 
         $this->generateFile($path, json_encode($composerConfiguration, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
@@ -140,6 +158,67 @@ bin/
 composer.phar
 composer.lock
 GITIGNORE;
+
+        $this->filesystem->appendToFile($path, $content);
+    }
+
+    private function getPhpFileHeaders()
+    {
+        return <<<PHP_FILE_HEADERS
+<?php
+/*
+ * This file is part of the Guanaco package.
+ *
+ * (c) Alexandre Andre <alexandre@creakiwi.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+declare(strict_types=1);
+
+PHP_FILE_HEADERS;
+    }
+
+    private function getAuthorsAnnotation(): string
+    {
+        $authors = [];
+        foreach ($this->configuration['authors'] as $author) {
+            $authors[] = sprintf(' * @author %s <%s>', $author['name'], $author['email']);
+        }
+
+        return "/**\n".implode("\n", $authors)."\n */";
+    }
+
+    private function createBundleFile(GenerateCommandInterface $command): void
+    {
+        $phpFileHeaders = $this->getPhpFileHeaders();
+        $namespace = $this->configuration['namespace'];
+        $packageName = $command->getPackageName();
+        $packageType = $command->getType();
+        $authors = $this->getAuthorsAnnotation();
+        $path = sprintf('%s/%s/Guanaco%s%sBundle.php', $this->configuration['root_directory'], $command->getPackageDirectory(), $command->getPackageName(), $command->getType());
+        $content = <<<BUNDLE
+${phpFileHeaders}
+namespace ${namespace}\\${packageName}\\${packageType};
+
+use ${namespace}\\${packageName}\\${packageType}\DependencyInjection\\${namespace}${packageName}${packageType}Extension;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+${authors}
+final class ${namespace}${packageName}${packageType}Bundle extends Bundle
+{
+    public function build(ContainerBuilder \$container)
+    {
+        parent::build(\$container);
+    }
+
+    public function getContainerExtension()
+    {
+        return new ${namespace}${packageName}${packageType}Extension();
+    }
+}
+BUNDLE;
 
         $this->filesystem->appendToFile($path, $content);
     }

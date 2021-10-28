@@ -32,7 +32,7 @@ class InjectConfigurationPass implements CompilerPassInterface
 
         foreach ($composerServices as $id => $tags) {
             $definition = $container->getDefinition($id);
-            $definition->addArgument($config);
+            $definition->addArgument($config['infrastructure']);
         }
     }
 }
